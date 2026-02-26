@@ -133,7 +133,51 @@ export const getFeed = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+// @desc    Get saved posts
+// @route   GET /api/posts/saved
+export const getSavedPosts = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).populate('saved');
+    res.json(user.saved);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
 
+// @desc    Get liked posts
+// @route   GET /api/posts/liked
+export const getLikedPosts = async (req, res) => {
+  try {
+    const posts = await Post.find({ likes: req.user._id })
+      .populate('user', 'username avatar')
+      .sort({ createdAt: -1 });
+    res.json(posts);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// @desc    Save/unsave post
+// @route   POST /api/posts/:id/save
+export const savePost = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    const postId = req.params.id;
+    
+    const isSaved = user.saved.includes(postId);
+    
+    if (isSaved) {
+      user.saved = user.saved.filter(id => id.toString() !== postId);
+    } else {
+      user.saved.push(postId);
+    }
+    
+    await user.save();
+    res.json({ saved: !isSaved });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
 // @desc    Search posts by caption or user
 // @route   GET /api/posts/search?q=query
 export const searchPosts = async (req, res) => {
